@@ -1,0 +1,82 @@
+name: 每日更新汇率
+
+on:
+  schedule:
+    # 每天北京时间 8:00 (UTC 0:00) 自动运行
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 允许手动触发
+
+permissions:
+  contents: write
+
+jobs:
+  update-exchange-rates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch exchange rates
+        run: |
+          mkdir -p data
+          
+          # 从 exchangerate-api 获取汇率 (基于 CNY)
+          RESPONSE=$(curl -sf "https://open.er-api.com/v6/latest/CNY" || echo "")
+          
+          if [ -z "$RESPONSE" ]; then
+            echo "Primary API failed, trying fallback..."
+            RESPONSE=$(curl -sf "https://api.exchangerate-api.com/v4/latest/CNY" || echo "")
+          fi
+          
+          if [ -z "$RESPONSE" ]; then
+            echo "All APIs failed. Skipping update."
+            exit 0
+          fi
+          
+          # 用 jq 提取并计算 TO CNY 汇率 (取倒数)
+          echo "$RESPONSE" | jq '{
+            updated_at: now | strftime("%Y-%m-%dT%H:%M:%SZ"),
+            base: "CNY",
+            rates: {
+              USD: (1 / .rates.USD),
+              EUR: (1 / .rates.EUR),
+              GBP: (1 / .rates.GBP),
+              JPY: (1 / .rates.JPY),
+              KRW: (1 / .rates.KRW),
+              SGD: (1 / .rates.SGD),
+              AUD: (1 / .rates.AUD),
+              CAD: (1 / .rates.CAD),
+              AED: (1 / .rates.AED),
+              MYR: (1 / .rates.MYR),
+              THB: (1 / .rates.THB),
+              INR: (1 / .rates.INR),
+              BRL: (1 / .rates.BRL),
+              MXN: (1 / .rates.MXN),
+              RUB: (1 / .rates.RUB),
+              TRY: (1 / .rates.TRY),
+              SAR: (1 / .rates.SAR),
+              PHP: (1 / .rates.PHP),
+              IDR: (1 / .rates.IDR),
+              NZD: (1 / .rates.NZD),
+              CHF: (1 / .rates.CHF),
+              NOK: (1 / .rates.NOK),
+              HKD: (1 / .rates.HKD)
+            } | with_entries(.value |= (. * 10000 | round / 10000))
+          }' > data/exchange-rates.json
+          
+          echo "Exchange rates updated:"
+          cat data/exchange-rates.json
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/exchange-rates.json
+          
+          # 只在有变化时提交
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update exchange rates $(date +%Y-%m-%d)"
+            git push
+          fi
