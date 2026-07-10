@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>涉外商标报价系统</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1a2744;--navy-light:#243352;--navy-hover:#2d3f63;
+  --accent:#c46a28;--accent-light:#d4863e;--accent-bg:rgba(196,106,40,0.08);
+  --white:#ffffff;--bg:#f5f6f8;--border:#e2e5ea;--border-light:#eef0f3;
+  --text:#1a1a2e;--text-sec:#5a6072;--text-light:#8a8fa0;
+  --success:#2a9d5c;--danger:#d64545;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 1px 3px rgba(0,0,0,0.08);--shadow-lg:0 4px 16px rgba(0,0,0,0.1);
+  --sidebar-w:220px;--panel-w:380px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+html{font-size:14px}
+body{font-family:var(--font);color:var(--text);background:var(--bg);min-height:100vh;display:flex}
+
+/* Sidebar */
+.sidebar{width:var(--sidebar-w);background:var(--navy);color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sidebar-logo{padding:24px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.sidebar-logo .logo-icon{width:44px;height:44px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0}
+.sidebar-logo .logo-text{font-size:14px;font-weight:600;line-height:1.4}
+.sidebar-logo .logo-sub{font-size:11px;color:rgba(255,255,255,0.45);font-weight:400}
+.sidebar-nav{flex:1;padding:12px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:12px 20px;cursor:pointer;color:rgba(255,255,255,0.6);font-size:13.5px;transition:all .15s;border-left:3px solid transparent}
+.nav-item:hover{background:var(--navy-light);color:rgba(255,255,255,0.85)}
+.nav-item.active{background:var(--navy-light);color:#fff;border-left-color:var(--accent)}
+.nav-item .nav-icon{width:20px;text-align:center;font-size:16px}
+.nav-item .nav-badge{background:var(--accent);color:#fff;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:auto}
+.sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,0.08);font-size:11px;color:rgba(255,255,255,0.35)}
+.sidebar-footer .dot{width:7px;height:7px;background:var(--success);border-radius:50%;display:inline-block;margin-right:6px}
+
+/* Main content */
+.main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.content{flex:1;padding:24px 28px}
+
+/* Page: New Quotation */
+.page{display:none}
+.page.active{display:block}
+.new-quote-layout{display:flex;gap:0}
+.new-quote-main{flex:1;min-width:0}
+.new-quote-panel{width:var(--panel-w);position:sticky;top:24px;align-self:flex-start;margin-left:24px;flex-shrink:0}
+
+.editing-banner{background:var(--accent-bg);border:1px solid #f0d9b5;color:var(--accent);padding:10px 16px;border-radius:var(--radius);font-size:12.5px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.editing-banner button{margin-left:auto;padding:5px 12px;border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font)}
+
+/* Steps */
+.step{background:var(--white);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px;border:1px solid var(--border-light)}
+.step-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.step-num{width:30px;height:30px;background:var(--navy);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.step-title{font-size:16px;font-weight:600}
+.step-subtitle{font-size:12.5px;color:var(--text-sec);margin-top:2px}
+.step-meta{margin-left:auto;font-size:12.5px;color:var(--accent);font-weight:500}
+
+/* Customer form */
+.form-row{display:flex;gap:16px;margin-bottom:0}
+.form-group{flex:1}
+.form-group label{display:block;font-size:12.5px;color:var(--text-sec);margin-bottom:6px;font-weight:500}
+.form-input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;font-family:var(--font);outline:none;transition:border .15s}
+.form-input:focus{border-color:var(--accent)}
+.form-input.err{border-color:var(--danger)}
+.form-err-msg{font-size:11px;color:var(--danger);margin-top:4px;display:none}
+.form-err-msg.show{display:block}
+
+/* Country cards */
+.country-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.country-card{display:flex;align-items:center;gap:10px;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .15s;background:var(--white);position:relative}
+.country-card:hover{border-color:var(--navy);background:rgba(26,39,68,0.02)}
+.country-card.selected{border-color:var(--navy);background:rgba(26,39,68,0.04)}
+.country-card.selected::after{content:'✓';position:absolute;top:8px;right:10px;width:20px;height:20px;background:var(--navy);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px}
+.country-code{width:32px;height:32px;background:var(--navy);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.country-info{line-height:1.3}
+.country-name{font-weight:600;font-size:13.5px}
+.country-detail{font-size:11px;color:var(--text-light);margin-top:1px}
+.country-toggle{text-align:center;padding:8px;color:var(--accent);font-size:12.5px;cursor:pointer;margin-top:4px}
+.country-toggle:hover{text-decoration:underline}
+.search-box{position:relative;margin-bottom:14px}
+.search-box input{width:100%;padding:10px 12px 10px 36px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none;font-family:var(--font)}
+.search-box input:focus{border-color:var(--accent)}
+.search-box::before{content:'⌕';position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-light);font-size:16px}
+
+/* Nice classes */
+.class-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:360px;overflow-y:auto;padding-right:4px}
+.class-grid::-webkit-scrollbar{width:4px}
+.class-grid::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.class-chip{display:flex;align-items:center;gap:6px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .15s;font-size:13px}
+.class-chip:hover{border-color:var(--navy)}
+.class-chip.selected{border-color:var(--accent);background:var(--accent-bg);color:var(--accent);font-weight:500}
+.class-chip .class-num{font-weight:600;color:var(--text-sec);min-width:20px}
+.class-chip.selected .class-num{color:var(--accent)}
+.class-actions{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.class-actions .btn-clear{padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--white);cursor:pointer;font-size:12.5px;color:var(--text-sec);font-family:var(--font)}
+.class-actions .btn-clear:hover{border-color:var(--text-sec)}
+.class-presets{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.class-preset-btn{padding:5px 12px;border:1px dashed var(--border);border-radius:14px;background:var(--white);cursor:pointer;font-size:11.5px;color:var(--text-sec);font-family:var(--font)}
+.class-preset-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Quotation Panel */
+.quote-panel{background:var(--white);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-light);box-shadow:var(--shadow-lg)}
+.quote-panel-header{background:var(--navy);color:#fff;padding:20px;display:flex;justify-content:between;align-items:flex-start}
+.quote-panel-header .qp-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:4px}
+.quote-panel-header .qp-title{font-size:17px;font-weight:600}
+.quote-panel-header .qp-lang{margin-left:auto;padding:4px 10px;border:1px solid rgba(255,255,255,0.2);border-radius:var(--radius);font-size:12px;cursor:pointer;color:rgba(255,255,255,0.7)}
+.quote-panel-body{padding:20px}
+.qp-info{display:flex;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-light)}
+.qp-info-item .qp-info-label{font-size:11px;color:var(--text-light);margin-bottom:2px}
+.qp-info-item .qp-info-value{font-size:13px;font-weight:500}
+.qp-empty{text-align:center;padding:40px 20px;color:var(--text-light)}
+.qp-empty .qp-empty-icon{font-size:48px;margin-bottom:12px;opacity:0.3}
+.qp-empty .qp-empty-text{font-size:14px;font-weight:500;color:var(--text-sec);margin-bottom:4px}
+.qp-empty .qp-empty-hint{font-size:12px}
+
+/* Country cost items */
+.qp-country{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border-light)}
+.qp-country:last-child{border-bottom:none}
+.qp-country-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.qp-country-header .qp-cc{width:28px;height:28px;background:var(--navy);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600}
+.qp-country-header .qp-cn{font-weight:600;font-size:13.5px}
+.qp-country-header .qp-classes{margin-left:auto;font-size:11.5px;color:var(--text-light)}
+.qp-country-header .qp-cny{font-weight:600;font-size:14px;color:var(--accent)}
+.qp-fees{display:flex;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--text-sec)}
+.qp-fees span{white-space:nowrap}
+
+/* Summary */
+.qp-summary{border-top:1px solid var(--border);padding-top:14px;margin-top:8px}
+.qp-summary-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.qp-summary-row.discount{color:var(--success)}
+.qp-summary-row.total{font-size:18px;font-weight:700;padding:12px 0 4px;border-top:1px solid var(--border);margin-top:8px}
+.qp-summary-row .editable{border:none;border-bottom:1px dashed var(--border);width:80px;text-align:right;font-size:13px;font-family:var(--font);outline:none;padding:2px 4px}
+.qp-summary-row .editable:focus{border-bottom-color:var(--accent)}
+.btn-export{display:block;width:100%;padding:14px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;margin-top:14px;font-family:var(--font);transition:background .15s}
+.btn-export:hover{background:var(--navy-hover)}
+.btn-export:disabled{opacity:0.6;cursor:not-allowed}
+.btn-export.secondary{background:var(--accent)}
+.btn-export.secondary:hover{background:var(--accent-light)}
+.qp-note{font-size:11px;color:var(--text-light);margin-top:12px;display:flex;align-items:flex-start;gap:6px;line-height:1.5}
+
+/* Page: Fee Settings */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:20px;font-weight:700}
+.page-subtitle{font-size:12.5px;color:var(--text-sec);margin-top:2px}
+.btn-primary{padding:9px 18px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius);font-size:13px;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:6px;font-weight:500;transition:background .15s}
+.btn-primary:hover{background:var(--navy-hover)}
+.btn-outline{padding:9px 18px;background:var(--white);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:6px;font-weight:500}
+.btn-outline:hover{border-color:var(--text-sec)}
+.alert-bar{background:#fef7ed;border:1px solid #f0d9b5;color:#8b5e2a;padding:10px 16px;border-radius:var(--radius);font-size:12.5px;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+
+/* Settings table */
+.settings-table{width:100%;background:var(--white);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-light)}
+.settings-table table{width:100%;border-collapse:collapse}
+.settings-table th{background:var(--bg);padding:10px 12px;font-size:12px;font-weight:600;color:var(--text-sec);text-align:left;border-bottom:1px solid var(--border)}
+.settings-table td{padding:8px 10px;border-bottom:1px solid var(--border-light)}
+.settings-table tr:last-child td{border-bottom:none}
+.settings-table .cell-input{width:100%;padding:7px 8px;border:1px solid var(--border-light);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;background:transparent}
+.settings-table .cell-input:focus{border-color:var(--accent);background:var(--white)}
+.settings-table .cell-input.narrow{width:56px}
+.btn-delete{width:28px;height:28px;border:none;background:transparent;color:var(--text-light);cursor:pointer;border-radius:6px;font-size:16px;display:flex;align-items:center;justify-content:center}
+.btn-delete:hover{background:#fef2f2;color:var(--danger)}
+
+/* Exchange rate settings */
+.exchange-section{margin-top:24px}
+.exchange-section .section-title{font-size:16px;font-weight:600;margin-bottom:4px}
+.exchange-section .section-subtitle{font-size:12.5px;color:var(--text-sec);margin-bottom:14px}
+.exchange-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.exchange-card{background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius);padding:12px}
+.exchange-card .ex-label{font-size:11px;color:var(--text-light);margin-bottom:4px}
+.exchange-card .ex-input{width:100%;padding:6px 8px;border:1px solid var(--border-light);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+.exchange-card .ex-input:focus{border-color:var(--accent)}
+.exchange-actions{display:flex;gap:10px;margin-top:14px}
+
+/* Page: History */
+.history-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.history-stat-card{background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px 18px}
+.history-stat-card .hs-label{font-size:12px;color:var(--text-light);margin-bottom:4px}
+.history-stat-card .hs-value{font-size:22px;font-weight:700;color:var(--navy)}
+.history-stat-card .hs-value.accent{color:var(--accent)}
+.history-toolbar{margin-bottom:16px;max-width:420px}
+.history-empty{text-align:center;padding:60px 20px;color:var(--text-light)}
+.history-empty .he-icon{font-size:48px;margin-bottom:12px;opacity:0.3}
+.history-list{display:flex;flex-direction:column;gap:10px}
+.history-card{background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px 20px;display:flex;align-items:center;gap:16px;transition:all .15s}
+.history-card:hover{border-color:var(--navy);box-shadow:var(--shadow)}
+.hc-main{flex:1;display:flex;align-items:center;gap:16px;cursor:pointer;min-width:0}
+.hc-id-wrap{min-width:170px}
+.history-card .hc-id{font-weight:600;font-size:13px}
+.hc-edited-badge{font-size:10px;background:var(--accent-bg);color:var(--accent);padding:2px 6px;border-radius:4px;margin-left:6px;white-space:nowrap}
+.history-card .hc-customer{font-size:13px;color:var(--text-sec);min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-card .hc-countries{font-size:12px;color:var(--text-light);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-card .hc-total{font-weight:700;font-size:15px;color:var(--accent);min-width:130px;text-align:right}
+.history-card .hc-date{font-size:12px;color:var(--text-light);min-width:90px;text-align:right}
+.history-card .hc-actions{display:flex;gap:6px;flex-shrink:0}
+.history-card .hc-actions button{padding:6px 10px;border:1px solid var(--border);background:var(--white);border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);white-space:nowrap}
+.history-card .hc-actions button:hover{border-color:var(--text-sec)}
+.history-card .hc-actions .btn-del{color:var(--danger)}
+.history-card .hc-actions .btn-del:hover{background:#fef2f2;border-color:var(--danger)}
+.no-results{text-align:center;padding:40px;color:var(--text-light);font-size:13px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.show{opacity:1;pointer-events:auto}
+.modal{background:var(--white);border-radius:var(--radius-lg);padding:24px;width:440px;max-width:90vw;box-shadow:var(--shadow-lg)}
+.modal.modal-lg{width:640px;max-width:92vw;max-height:85vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal p.modal-msg{font-size:13.5px;color:var(--text-sec);line-height:1.6}
+.modal .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.modal .btn-secondary{padding:9px 16px;border:1px solid var(--border);background:var(--white);border-radius:var(--radius);font-size:13px;cursor:pointer;font-family:var(--font)}
+.modal .btn-secondary:hover{border-color:var(--text-sec)}
+.modal .btn-danger{padding:9px 16px;border:none;background:var(--danger);color:#fff;border-radius:var(--radius);font-size:13px;cursor:pointer;font-family:var(--font)}
+
+/* Detail modal content */
+.detail-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-light)}
+.detail-header .dh-customer{font-size:17px;font-weight:700}
+.detail-header .dh-id{font-size:12px;color:var(--text-light);margin-top:2px}
+.detail-header .dh-date{font-size:12px;color:var(--text-light);text-align:right}
+.detail-close{width:28px;height:28px;border:none;background:var(--bg);border-radius:50%;cursor:pointer;font-size:14px;color:var(--text-sec);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:12px 22px;border-radius:var(--radius);font-size:13px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:all .25s;z-index:400;max-width:80vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.error{background:var(--danger)}
+.toast.success{background:var(--success)}
+
+/* PDF render doc (offscreen, captured by html2canvas) */
+.pdf-doc{width:756px;padding:44px;background:#fff;font-family:var(--font);color:#1a1a1a}
+.pdf-doc-header{text-align:center;margin-bottom:28px;padding-bottom:18px;border-bottom:2px solid #1a2744}
+.pdf-doc-header h1{font-size:22px;margin-bottom:4px;color:#1a2744;letter-spacing:1px}
+.pdf-doc-header p{font-size:12px;color:#999;letter-spacing:2px}
+.pdf-doc-info{display:flex;justify-content:space-between;margin-bottom:24px;font-size:13px;line-height:1.9}
+.pdf-doc-info .label{color:#888;margin-right:6px}
+.pdf-doc-table{width:100%;border-collapse:collapse;margin-bottom:22px;font-size:12.5px}
+.pdf-doc-table th{background:#1a2744;color:#fff;padding:11px 10px;text-align:left;font-weight:600}
+.pdf-doc-table td{padding:10px;border-bottom:1px solid #ececec}
+.pdf-doc-table td.num{text-align:right}
+.pdf-doc-summary{text-align:right;font-size:13px;margin-top:8px;line-height:2.1}
+.pdf-doc-summary .total{font-size:19px;font-weight:700;color:#c46a28;border-top:2px solid #1a2744;padding-top:12px;margin-top:8px}
+.pdf-doc-footer{margin-top:40px;font-size:11px;color:#999;text-align:center;line-height:1.9}
+
+/* Responsive */
+@media(max-width:1200px){
+  .new-quote-panel{width:320px}
+  .country-grid{grid-template-columns:repeat(2,1fr)}
+  .class-grid{grid-template-columns:repeat(4,1fr)}
+  .exchange-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:768px){
+  .sidebar{width:60px}
+  .sidebar .logo-text,.sidebar .logo-sub,.sidebar .nav-text,.sidebar-footer span{display:none}
+  .sidebar-logo{padding:16px 8px;justify-content:center}
+  .nav-item{justify-content:center;padding:14px 0}
+  .main{margin-left:60px}
+  .new-quote-layout{flex-direction:column}
+  .new-quote-panel{width:100%;position:static;margin-left:0;margin-top:20px}
+  .country-grid{grid-template-columns:repeat(2,1fr)}
+  .class-grid{grid-template-columns:repeat(3,1fr)}
+  .exchange-grid{grid-template-columns:repeat(2,1fr)}
+  .history-stats{grid-template-columns:1fr}
+  .history-card{flex-wrap:wrap}
+  .hc-main{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">小胡</div>
+    <div>
+      <div class="logo-text" id="sidebarTitle">涉外商标报价</div>
+      <div class="logo-sub">涉外报价管理系统</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-page="new-quote" onclick="switchPage('new-quote')">
+      <span class="nav-icon">＋</span><span class="nav-text">新建报价</span>
+    </div>
+    <div class="nav-item" data-page="history" onclick="switchPage('history')">
+      <span class="nav-icon">⏱</span><span class="nav-text">报价历史</span><span class="nav-badge" id="historyCount">0</span>
+    </div>
+    <div class="nav-item" data-page="settings" onclick="switchPage('settings')">
+      <span class="nav-icon">⚙</span><span class="nav-text">费率设置</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <span class="dot"></span><span>数据仅保存在本机</span><br>
+    <span style="margin-left:13px">不会上传客户或报价数据</span>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<div class="main">
+<div class="content">
+
+<!-- Page: New Quotation -->
+<div class="page active" id="page-new-quote">
+
+<div class="editing-banner" id="editingBanner" style="display:none">
+  ✎ 正在编辑已保存的报价 <strong id="editingBannerId"></strong>，保存后将更新该记录（而非新建）
+  <button onclick="cancelEditing()">放弃编辑，新建报价</button>
+</div>
+
+<div class="new-quote-layout">
+<div class="new-quote-main">
+
+  <!-- Step 1: Customer -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">01</div>
+      <div><div class="step-title">填写客户信息</div><div class="step-subtitle">客户名称和报价单号</div></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>客户名称</label>
+        <input class="form-input" id="customerName" placeholder="请输入客户名称" oninput="onCustomerInput()">
+        <div class="form-err-msg" id="customerErr">请填写客户名称后再保存</div>
+      </div>
+      <div class="form-group">
+        <label>报价单号</label>
+        <input class="form-input" id="quoteId" readonly>
+      </div>
+      <div class="form-group">
+        <label>有效天数</label>
+        <input class="form-input" id="validDays" type="number" value="30" min="1" oninput="updatePanel()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Countries -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">02</div>
+      <div><div class="step-title">选择申请国家 / 地区</div><div class="step-subtitle">可同时选择多个目的地进行比较</div></div>
+      <div class="step-meta" id="countryCount">已选 0</div>
+    </div>
+    <div class="search-box"><input id="countrySearch" placeholder="搜索国家、地区或知识产权局" oninput="filterCountries()"></div>
+    <div class="country-grid" id="countryGrid"></div>
+    <div class="country-toggle" id="countryToggle" onclick="toggleAllCountries()">展开更多国家 ↓</div>
+  </div>
+
+  <!-- Step 3: Classes -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">03</div>
+      <div><div class="step-title">选择商标类别</div><div class="step-subtitle">尼斯分类第 1–45 类，可多选</div></div>
+      <div class="step-meta" id="classCount">已选 0 类</div>
+    </div>
+    <div class="class-actions">
+      <div class="search-box" style="flex:1;margin-bottom:0"><input id="classSearch" placeholder="搜索类别或名称" oninput="filterClasses()"></div>
+      <button class="btn-clear" onclick="clearClasses()">清空</button>
+    </div>
+    <div class="class-grid" id="classGrid"></div>
+  </div>
+
+</div>
+
+<!-- Right Panel -->
+<div class="new-quote-panel">
+  <div class="quote-panel">
+    <div class="quote-panel-header">
+      <div>
+        <div class="qp-label">QUOTATION</div>
+        <div class="qp-title">商标申请费用预估</div>
+      </div>
+      <div class="qp-lang" onclick="toggleLang()" id="langToggle">中文</div>
+    </div>
+    <div class="quote-panel-body" id="quoteBody">
+      <div class="qp-info">
+        <div class="qp-info-item"><div class="qp-info-label">客户</div><div class="qp-info-value" id="qpCustomer">待填写</div></div>
+        <div class="qp-info-item" style="text-align:right"><div class="qp-info-label">报价单号</div><div class="qp-info-value" id="qpId">-</div></div>
+      </div>
+      <div id="qpClassesBadge" style="margin-bottom:14px;font-size:12px;color:var(--text-light)"></div>
+      <div id="qpCountries"></div>
+      <div id="qpSummary"></div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- Page: History -->
+<div class="page" id="page-history">
+  <div class="page-header">
+    <div><div class="page-title">报价历史</div><div class="page-subtitle">本机保存的所有报价记录</div></div>
+  </div>
+  <div class="history-stats" id="historyStats"></div>
+  <div class="search-box history-toolbar"><input id="historySearch" placeholder="搜索客户名称、报价单号或国家" oninput="renderHistory()"></div>
+  <div id="historyList"></div>
+</div>
+
+<!-- Page: Settings -->
+<div class="page" id="page-settings">
+  <div class="page-header">
+    <div><div class="page-title">国家 / 地区费率</div><div class="page-subtitle">首类费用 + (类别数 – 1) × 附加类费用</div></div>
+    <button class="btn-primary" onclick="addCountryRate()">＋ 添加国家</button>
+  </div>
+  <div class="alert-bar">⚠ 正式使用前请复核　各局官费、税费、商品项限制及汇率会变化；建议指定专人定期维护，并在报价备注中写明不包含的后续程序。</div>
+  <div class="settings-table" id="settingsTable"></div>
+
+  <div class="exchange-section">
+    <div class="section-title">汇率设置 (→ CNY)</div>
+    <div class="section-subtitle">用于将各国本币费用换算为人民币，可手动修改或从线上更新</div>
+    <div class="exchange-grid" id="exchangeGrid"></div>
+    <div class="exchange-actions">
+      <button class="btn-primary" onclick="fetchExchangeRates()">🔄 从线上更新汇率</button>
+      <button class="btn-outline" onclick="saveSettings()">💾 保存全部设置</button>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- Offscreen PDF render area (captured by html2canvas) -->
+<div id="pdfRenderArea" style="position:fixed;left:-9999px;top:0;z-index:-1"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toastEl"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const NICE_CLASSES = [
+  {n:1,name:'化学原料'},{n:2,name:'颜料油漆'},{n:3,name:'日化用品'},{n:4,name:'燃料油脂'},{n:5,name:'医药用品'},
+  {n:6,name:'金属材料'},{n:7,name:'机械设备'},{n:8,name:'手工器械'},{n:9,name:'科学仪器'},{n:10,name:'医疗器械'},
+  {n:11,name:'灯具空调'},{n:12,name:'运输工具'},{n:13,name:'军火烟火'},{n:14,name:'珠宝钟表'},{n:15,name:'乐器'},
+  {n:16,name:'办公用品'},{n:17,name:'橡胶制品'},{n:18,name:'皮革皮具'},{n:19,name:'建筑材料'},{n:20,name:'家具'},
+  {n:21,name:'厨房洁具'},{n:22,name:'绳网袋篷'},{n:23,name:'纱线丝'},{n:24,name:'布料床单'},{n:25,name:'服装鞋帽'},
+  {n:26,name:'纽扣拉链'},{n:27,name:'地毯席垫'},{n:28,name:'健身器材'},{n:29,name:'食品'},{n:30,name:'方便食品'},
+  {n:31,name:'饲料种籽'},{n:32,name:'啤酒饮料'},{n:33,name:'酒'},{n:34,name:'烟草烟具'},{n:35,name:'广告销售'},
+  {n:36,name:'金融物管'},{n:37,name:'建筑修理'},{n:38,name:'通讯服务'},{n:39,name:'运输贮藏'},{n:40,name:'材料加工'},
+  {n:41,name:'教育娱乐'},{n:42,name:'科技服务'},{n:43,name:'餐饮住宿'},{n:44,name:'医疗园艺'},{n:45,name:'法律安保'}
+];
+
+const CLASS_PRESETS = {
+  '科技/互联网常用': [9,35,38,41,42],
+  '电商/零售常用': [3,9,18,25,35],
+  '餐饮常用': [29,30,32,35,43],
+  '服装常用': [18,24,25,35]
+};
+
+const OFFICE_MAP = {
+  US:'USPTO · USD', EU:'EUIPO · EUR', GB:'UKIPO · GBP', JP:'JPO · JPY',
+  KR:'KIPO · KRW', SG:'IPOS · SGD', AU:'IP Australia · AUD', CA:'CIPO · CAD',
+  AE:'MOE · AED', MY:'MyIPO · MYR', TH:'DIP · THB', VN:'IP Vietnam · USD',
+  IN:'IPO · INR', BR:'INPI · BRL', MX:'IMPI · MXN', RU:'Rospatent · RUB',
+  TR:'TURKPATENT · TRY', SA:'SAIP · SAR', PH:'IPOPHL · PHP', ID:'DGIP · IDR',
+  NZ:'IPONZ · NZD', CH:'IGE · CHF', NO:'NIPO · NOK', HK:'HKIPD · HKD'
+};
+
+const DEFAULT_RATES = [
+  {name:'美国',code:'US',currency:'USD',firstOfficial:350,addOfficial:350,firstService:520,addService:180,searchFee:90},
+  {name:'欧盟',code:'EU',currency:'EUR',firstOfficial:850,addOfficial:50,firstService:480,addService:120,searchFee:80},
+  {name:'英国',code:'GB',currency:'GBP',firstOfficial:170,addOfficial:50,firstService:420,addService:110,searchFee:65},
+  {name:'日本',code:'JP',currency:'JPY',firstOfficial:12000,addOfficial:8600,firstService:68000,addService:26000,searchFee:9000},
+  {name:'韩国',code:'KR',currency:'KRW',firstOfficial:62000,addOfficial:62000,firstService:620000,addService:180000,searchFee:80000},
+  {name:'新加坡',code:'SG',currency:'SGD',firstOfficial:280,addOfficial:280,firstService:520,addService:160,searchFee:80},
+  {name:'澳大利亚',code:'AU',currency:'AUD',firstOfficial:330,addOfficial:330,firstService:520,addService:160,searchFee:85},
+  {name:'加拿大',code:'CA',currency:'CAD',firstOfficial:458,addOfficial:139,firstService:580,addService:160,searchFee:90},
+  {name:'阿联酋',code:'AE',currency:'AED',firstOfficial:6500,addOfficial:6500,firstService:2800,addService:900,searchFee:500},
+  {name:'马来西亚',code:'MY',currency:'MYR',firstOfficial:950,addOfficial:950,firstService:2100,addService:650,searchFee:300},
+  {name:'泰国',code:'TH',currency:'THB',firstOfficial:1000,addOfficial:1000,firstService:16000,addService:5200,searchFee:2200},
+  {name:'越南',code:'VN',currency:'USD',firstOfficial:160,addOfficial:120,firstService:480,addService:150,searchFee:70}
+];
+
+const DEFAULT_EXCHANGE = {
+  USD:7.25,EUR:8.10,GBP:9.30,JPY:0.049,KRW:0.0053,SGD:5.40,
+  AUD:4.80,CAD:5.30,AED:1.97,MYR:1.55,THB:0.20,
+  INR:0.087,BRL:1.45,MXN:0.42,RUB:0.078,TRY:0.21,
+  SAR:1.93,PHP:0.13,IDR:0.00045,NZD:4.40,CHF:8.20,NOK:0.68,HKD:0.93
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  rates: [],
+  exchange: {},
+  selectedCountries: [],
+  selectedClasses: [],
+  history: [],
+  showAllCountries: false,
+  lang: 'zh',
+  discount: 0,
+  rush: 0,
+  taxRate: 0,
+  searchEnabled: true,
+  editingHistoryId: null // set when editing an existing saved quote
+};
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  loadData();
+  generateQuoteId();
+  renderCountryGrid();
+  renderClassGrid();
+  renderClassPresets();
+  renderSettings();
+  renderHistory();
+  updatePanel();
+  updateHistoryBadge();
+  tryLoadRemoteRates();
+}
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem('tm_rates');
+    state.rates = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_RATES));
+  } catch(e) { state.rates = JSON.parse(JSON.stringify(DEFAULT_RATES)); }
+  try {
+    const saved = localStorage.getItem('tm_exchange');
+    state.exchange = saved ? JSON.parse(saved) : {...DEFAULT_EXCHANGE};
+  } catch(e) { state.exchange = {...DEFAULT_EXCHANGE}; }
+  try {
+    const saved = localStorage.getItem('tm_history');
+    state.history = saved ? JSON.parse(saved) : [];
+  } catch(e) { state.history = []; }
+  try {
+    const saved = localStorage.getItem('tm_search_enabled');
+    state.searchEnabled = saved !== null ? JSON.parse(saved) : true;
+  } catch(e) { state.searchEnabled = true; }
+}
+
+function saveData() {
+  localStorage.setItem('tm_rates', JSON.stringify(state.rates));
+  localStorage.setItem('tm_exchange', JSON.stringify(state.exchange));
+  localStorage.setItem('tm_history', JSON.stringify(state.history));
+  localStorage.setItem('tm_search_enabled', JSON.stringify(state.searchEnabled));
+}
+
+function generateQuoteId() {
+  const d = new Date();
+  const ds = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  let seq = 1;
+  try {
+    const seqData = JSON.parse(localStorage.getItem('tm_quote_seq') || '{}');
+    if (seqData.date === ds) { seq = (seqData.seq || 0) + 1; }
+    localStorage.setItem('tm_quote_seq', JSON.stringify({date: ds, seq}));
+  } catch(e) {}
+  document.getElementById('quoteId').value = `IP-${ds}-${String(seq).padStart(3,'0')}`;
+}
+
+async function tryLoadRemoteRates() {
+  try {
+    const resp = await fetch('./data/exchange-rates.json');
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.rates) {
+        Object.assign(state.exchange, data.rates);
+        saveData();
+        renderSettings();
+        updatePanel();
+      }
+    }
+  } catch(e) { /* silently use local rates */ }
+}
+
+// ============================================================
+// TOAST & MODAL HELPERS
+// ============================================================
+function showToast(msg, type) {
+  const toast = document.getElementById('toastEl');
+  toast.className = `toast show${type ? ' '+type : ''}`;
+  toast.textContent = msg;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.remove('show'), 2600);
+}
+
+function openModal(html, large) {
+  const content = document.getElementById('modalContent');
+  content.className = 'modal' + (large ? ' modal-lg' : '');
+  content.innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+function showConfirm(title, message, onConfirmFnName, confirmLabel, danger) {
+  openModal(`
+    <h3>${title}</h3>
+    <p class="modal-msg">${message}</p>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">取消</button>
+      <button class="${danger?'btn-danger':'btn-secondary'}" style="${danger?'':'background:var(--navy);color:#fff;border:none'}" onclick="closeModal();${onConfirmFnName}">${confirmLabel||'确定'}</button>
+    </div>
+  `);
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+  if (page === 'history') renderHistory();
+  if (page === 'settings') renderSettings();
+}
+
+// ============================================================
+// DRAFT GUARD
+// ============================================================
+function hasUnsavedDraft() {
+  return state.selectedCountries.length > 0 || state.selectedClasses.length > 0 ||
+    (document.getElementById('customerName').value || '').trim().length > 0;
+}
+
+// ============================================================
+// COUNTRIES
+// ============================================================
+function renderCountryGrid() {
+  const grid = document.getElementById('countryGrid');
+  const search = (document.getElementById('countrySearch').value || '').toLowerCase();
+  const visible = state.showAllCountries ? state.rates : state.rates.slice(0, 12);
+  const filtered = visible.filter(r => {
+    if (!search) return true;
+    return r.name.toLowerCase().includes(search) || r.code.toLowerCase().includes(search) ||
+      (OFFICE_MAP[r.code]||'').toLowerCase().includes(search);
+  });
+  grid.innerHTML = filtered.map(r => {
+    const sel = state.selectedCountries.includes(r.code) ? ' selected' : '';
+    const office = OFFICE_MAP[r.code] || `${r.code} · ${r.currency}`;
+    return `<div class="country-card${sel}" onclick="toggleCountry('${r.code}')">
+      <div class="country-code">${r.code}</div>
+      <div class="country-info"><div class="country-name">${r.name}</div><div class="country-detail">${office}</div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('countryToggle').textContent = state.showAllCountries
+    ? '收起部分国家 ↑' : `展开更多国家 ↓`;
+  document.getElementById('countryToggle').style.display = state.rates.length <= 12 ? 'none' : '';
+  document.getElementById('countryCount').textContent = `已选 ${state.selectedCountries.length}`;
+}
+function filterCountries() { renderCountryGrid(); }
+function toggleAllCountries() { state.showAllCountries = !state.showAllCountries; renderCountryGrid(); }
+function toggleCountry(code) {
+  const idx = state.selectedCountries.indexOf(code);
+  if (idx >= 0) state.selectedCountries.splice(idx, 1);
+  else state.selectedCountries.push(code);
+  renderCountryGrid();
+  updatePanel();
+}
+
+// ============================================================
+// CLASSES
+// ============================================================
+function renderClassGrid() {
+  const grid = document.getElementById('classGrid');
+  const search = (document.getElementById('classSearch').value || '').toLowerCase();
+  const filtered = NICE_CLASSES.filter(c => {
+    if (!search) return true;
+    return String(c.n).includes(search) || c.name.includes(search);
+  });
+  grid.innerHTML = filtered.map(c => {
+    const sel = state.selectedClasses.includes(c.n) ? ' selected' : '';
+    return `<div class="class-chip${sel}" onclick="toggleClass(${c.n})">
+      <span class="class-num">${String(c.n).padStart(2,'0')}</span>${c.name}
+    </div>`;
+  }).join('');
+  document.getElementById('classCount').textContent = `已选 ${state.selectedClasses.length} 类`;
+}
+function renderClassPresets() {
+  const wrap = document.createElement('div');
+  wrap.className = 'class-presets';
+  wrap.innerHTML = Object.keys(CLASS_PRESETS).map(name =>
+    `<button class="class-preset-btn" onclick='applyPreset(${JSON.stringify(CLASS_PRESETS[name])})'>${name}</button>`
+  ).join('');
+  const classActions = document.querySelector('.class-actions');
+  classActions.parentNode.insertBefore(wrap, classActions);
+}
+function applyPreset(arr) {
+  state.selectedClasses = [...new Set(arr)].sort((a,b) => a-b);
+  renderClassGrid();
+  updatePanel();
+}
+function filterClasses() { renderClassGrid(); }
+function clearClasses() { state.selectedClasses = []; renderClassGrid(); updatePanel(); }
+function toggleClass(n) {
+  const idx = state.selectedClasses.indexOf(n);
+  if (idx >= 0) state.selectedClasses.splice(idx, 1);
+  else state.selectedClasses.push(n);
+  state.selectedClasses.sort((a,b) => a - b);
+  renderClassGrid();
+  updatePanel();
+}
+
+// ============================================================
+// CALCULATION & PANEL
+// ============================================================
+function calcCountryCost(rate, classCount) {
+  if (classCount <= 0) return { official: 0, service: 0, search: 0, total: 0 };
+  const official = rate.firstOfficial + Math.max(0, classCount - 1) * rate.addOfficial;
+  const service = rate.firstService + Math.max(0, classCount - 1) * rate.addService;
+  const search = state.searchEnabled ? rate.searchFee * classCount : 0;
+  return { official, service, search, total: official + service + search };
+}
+
+function toCNY(amount, currency, exchangeMap) {
+  const map = exchangeMap || state.exchange;
+  const rate = map[currency] || 1;
+  return amount * rate;
+}
+
+function fmt(n, decimals) {
+  decimals = decimals === undefined ? 2 : decimals;
+  return (n||0).toLocaleString('zh-CN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function fmtCurrency(n, currency) {
+  const symbols = { USD:'$',EUR:'€',GBP:'£',JPY:'¥',KRW:'₩',SGD:'S$',AUD:'A$',CAD:'C$',AED:'د.إ',MYR:'RM',THB:'฿',CNY:'¥',
+    INR:'₹',BRL:'R$',MXN:'$',RUB:'₽',TRY:'₺',SAR:'﷼',PHP:'₱',IDR:'Rp',NZD:'NZ$',CHF:'CHF',NOK:'kr',HKD:'HK$'};
+  const sym = symbols[currency] || currency;
+  return `${sym}${fmt(n, currency === 'JPY' || currency === 'KRW' ? 0 : 2)}`;
+}
+
+function onCustomerInput() {
+  document.getElementById('customerName').classList.remove('err');
+  document.getElementById('customerErr').classList.remove('show');
+  updatePanel();
+}
+
+function updatePanel() {
+  const customer = document.getElementById('customerName').value || '待填写';
+  const quoteId = document.getElementById('quoteId').value;
+  document.getElementById('qpCustomer').textContent = customer;
+  document.getElementById('qpId').textContent = quoteId;
+
+  const classCount = state.selectedClasses.length;
+  const countryCodes = state.selectedCountries;
+
+  const badgeEl = document.getElementById('qpClassesBadge');
+  if (classCount > 0) {
+    badgeEl.innerHTML = `<span style="font-weight:500;color:var(--text)">申请类别</span>　` +
+      state.selectedClasses.map(n => `第${n}类`).join('、');
+  } else {
+    badgeEl.innerHTML = '';
+  }
+
+  const countriesEl = document.getElementById('qpCountries');
+  const summaryEl = document.getElementById('qpSummary');
+
+  if (countryCodes.length === 0 || classCount === 0) {
+    countriesEl.innerHTML = `<div class="qp-empty">
+      <div class="qp-empty-icon">◎</div>
+      <div class="qp-empty-text">从左侧开始选择</div>
+      <div class="qp-empty-hint">选好国家和商标类别，费用明细会在这里实时生成。</div>
+    </div>`;
+    summaryEl.innerHTML = '';
+    return;
+  }
+
+  let subtotal = 0;
+  countriesEl.innerHTML = countryCodes.map(code => {
+    const rate = state.rates.find(r => r.code === code);
+    if (!rate) return '';
+    const cost = calcCountryCost(rate, classCount);
+    const cny = toCNY(cost.total, rate.currency);
+    subtotal += cny;
+    const zh = state.lang === 'zh';
+    return `<div class="qp-country">
+      <div class="qp-country-header">
+        <div class="qp-cc">${code}</div>
+        <div class="qp-cn">${rate.name}</div>
+        <div class="qp-classes">${classCount} 类 · ${rate.currency} 计价</div>
+        <div class="qp-cny">¥${fmt(cny)}</div>
+      </div>
+      <div class="qp-fees">
+        <span>${zh?'官费':'Official'} ${fmtCurrency(cost.official, rate.currency)}</span>
+        <span>${zh?'服务费':'Service'} ${fmtCurrency(cost.service, rate.currency)}</span>
+        ${cost.search > 0 ? `<span>${zh?'检索':'Search'} ${fmtCurrency(cost.search, rate.currency)}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const discountVal = parseFloat(state.discount) || 0;
+  const rushVal = parseFloat(state.rush) || 0;
+  const taxVal = parseFloat(state.taxRate) || 0;
+  const afterDiscount = subtotal - discountVal;
+  const afterRush = afterDiscount + rushVal;
+  const tax = afterRush * (taxVal / 100);
+  const grandTotal = afterRush + tax;
+
+  summaryEl.innerHTML = `<div class="qp-summary">
+    <div class="qp-summary-row"><span>费用小计</span><span>¥${fmt(subtotal)} CNY</span></div>
+    <div class="qp-summary-row discount"><span>客户折扣</span><span>- <input class="editable" type="number" value="${discountVal}" min="0" step="100" onchange="state.discount=this.value;updatePanel()"> CNY</span></div>
+    <div class="qp-summary-row"><span>加急服务</span><span>+ <input class="editable" type="number" value="${rushVal}" min="0" step="100" onchange="state.rush=this.value;updatePanel()"> CNY</span></div>
+    <div class="qp-summary-row"><span>税费 (%)</span><span><input class="editable" type="number" value="${taxVal}" min="0" max="100" step="1" onchange="state.taxRate=this.value;updatePanel()" style="width:50px"> %　¥${fmt(tax)}</span></div>
+    <div class="qp-summary-row total"><span>预估总计</span><span>¥${fmt(grandTotal)} CNY</span></div>
+  </div>
+  <button class="btn-export" id="exportPdfBtn" onclick="exportCurrentDraftPDF()">📄 导出 PDF</button>
+  <button class="btn-export secondary" onclick="saveQuotation()">💾 ${state.editingHistoryId ? '更新报价' : '保存报价'}</button>
+  <div class="qp-note">ⓘ 官费可能因政策和汇率变化，请在出具正式报价前复核。</div>`;
+}
+
+function toggleLang() {
+  state.lang = state.lang === 'zh' ? 'en' : 'zh';
+  document.getElementById('langToggle').textContent = state.lang === 'zh' ? '中文' : 'EN';
+  updatePanel();
+}
+
+// ============================================================
+// SAVE / EDIT / DUPLICATE
+// ============================================================
+function computeQuoteTotal(subtotal, discount, rush, taxRate) {
+  const afterDiscount = subtotal - (discount||0);
+  const afterRush = afterDiscount + (rush||0);
+  const tax = afterRush * ((taxRate||0) / 100);
+  return afterRush + tax;
+}
+
+function saveQuotation() {
+  const customerInput = document.getElementById('customerName');
+  const customer = customerInput.value.trim();
+  const quoteId = document.getElementById('quoteId').value;
+  if (!customer) {
+    customerInput.classList.add('err');
+    document.getElementById('customerErr').classList.add('show');
+    customerInput.focus();
+    showToast('请先填写客户名称', 'error');
+    return;
+  }
+  if (state.selectedCountries.length === 0 || state.selectedClasses.length === 0) {
+    showToast('请至少选择一个国家和一个商标类别', 'error');
+    return;
+  }
+  let subtotal = 0;
+  state.selectedCountries.forEach(code => {
+    const rate = state.rates.find(r => r.code === code);
+    if (rate) subtotal += toCNY(calcCountryCost(rate, state.selectedClasses.length).total, rate.currency);
+  });
+  const entry = {
+    id: quoteId, customer, date: new Date().toISOString(),
+    validDays: +document.getElementById('validDays').value || 30,
+    countries: [...state.selectedCountries],
+    classes: [...state.selectedClasses],
+    discount: parseFloat(state.discount)||0,
+    rush: parseFloat(state.rush)||0,
+    taxRate: parseFloat(state.taxRate)||0,
+    subtotal,
+    ratesSnapshot: JSON.parse(JSON.stringify(state.rates.filter(r => state.selectedCountries.includes(r.code)))),
+    exchangeSnapshot: {...state.exchange}
+  };
+
+  const isUpdate = state.editingHistoryId && state.editingHistoryId === quoteId;
+  if (isUpdate) {
+    const idx = state.history.findIndex(h => h.id === quoteId);
+    if (idx >= 0) {
+      entry.date = state.history[idx].date; // keep original creation date
+      entry.updatedAt = new Date().toISOString();
+      state.history[idx] = entry;
+    } else {
+      state.history.unshift(entry);
+    }
+    showToast(`报价 ${quoteId} 已更新`, 'success');
+  } else {
+    state.history.unshift(entry);
+    showToast(`报价 ${quoteId} 已保存`, 'success');
+  }
+
+  saveData();
+  updateHistoryBadge();
+  resetDraft();
+}
+
+function resetDraft() {
+  state.selectedCountries = [];
+  state.selectedClasses = [];
+  state.discount = 0; state.rush = 0; state.taxRate = 0;
+  state.editingHistoryId = null;
+  document.getElementById('customerName').value = '';
+  document.getElementById('customerName').classList.remove('err');
+  document.getElementById('customerErr').classList.remove('show');
+  document.getElementById('editingBanner').style.display = 'none';
+  generateQuoteId();
+  renderCountryGrid(); renderClassGrid(); updatePanel();
+}
+
+function cancelEditing() {
+  showConfirm('放弃编辑？', '当前编辑内容不会被保存，是否放弃并新建一张空白报价？', 'resetDraft()', '放弃编辑', true);
+}
+
+function editHistoryEntry(idx) {
+  const doLoad = () => {
+    const h = state.history[idx];
+    if (!h) return;
+    document.getElementById('customerName').value = h.customer;
+    document.getElementById('customerName').classList.remove('err');
+    document.getElementById('customerErr').classList.remove('show');
+    document.getElementById('quoteId').value = h.id;
+    document.getElementById('validDays').value = h.validDays || 30;
+    state.selectedCountries = [...h.countries];
+    state.selectedClasses = [...h.classes];
+    state.discount = h.discount || 0;
+    state.rush = h.rush || 0;
+    state.taxRate = h.taxRate || 0;
+    state.editingHistoryId = h.id;
+    document.getElementById('editingBanner').style.display = 'flex';
+    document.getElementById('editingBannerId').textContent = h.id;
+    closeModal();
+    switchPage('new-quote');
+    renderCountryGrid(); renderClassGrid(); updatePanel();
+  };
+  if (hasUnsavedDraft() && state.editingHistoryId !== state.history[idx].id) {
+    closeModal();
+    showConfirm('当前有未保存的草稿', '继续操作会覆盖当前编辑中的报价内容，确定要继续吗？', `editHistoryEntryConfirmed(${idx})`, '继续', true);
+  } else {
+    doLoad();
+  }
+}
+function editHistoryEntryConfirmed(idx) {
+  const h = state.history[idx];
+  document.getElementById('customerName').value = h.customer;
+  document.getElementById('quoteId').value = h.id;
+  document.getElementById('validDays').value = h.validDays || 30;
+  state.selectedCountries = [...h.countries];
+  state.selectedClasses = [...h.classes];
+  state.discount = h.discount || 0;
+  state.rush = h.rush || 0;
+  state.taxRate = h.taxRate || 0;
+  state.editingHistoryId = h.id;
+  document.getElementById('editingBanner').style.display = 'flex';
+  document.getElementById('editingBannerId').textContent = h.id;
+  switchPage('new-quote');
+  renderCountryGrid(); renderClassGrid(); updatePanel();
+}
+
+function duplicateHistoryEntry(idx) {
+  const doLoad = () => {
+    const h = state.history[idx];
+    if (!h) return;
+    document.getElementById('customerName').value = '';
+    document.getElementById('customerName').classList.remove('err');
+    document.getElementById('customerErr').classList.remove('show');
+    generateQuoteId();
+    document.getElementById('validDays').value = h.validDays || 30;
+    state.selectedCountries = [...h.countries];
+    state.selectedClasses = [...h.classes];
+    state.discount = h.discount || 0;
+    state.rush = h.rush || 0;
+    state.taxRate = h.taxRate || 0;
+    state.editingHistoryId = null;
+    document.getElementById('editingBanner').style.display = 'none';
+    closeModal();
+    switchPage('new-quote');
+    renderCountryGrid(); renderClassGrid(); updatePanel();
+    showToast('已基于历史报价创建新草稿，请填写客户名称');
+  };
+  if (hasUnsavedDraft()) {
+    closeModal();
+    showConfirm('当前有未保存的草稿', '继续操作会覆盖当前编辑中的报价内容，确定要继续吗？', `duplicateHistoryEntryConfirmed(${idx})`, '继续', true);
+  } else {
+    doLoad();
+  }
+}
+function duplicateHistoryEntryConfirmed(idx) {
+  const h = state.history[idx];
+  document.getElementById('customerName').value = '';
+  generateQuoteId();
+  document.getElementById('validDays').value = h.validDays || 30;
+  state.selectedCountries = [...h.countries];
+  state.selectedClasses = [...h.classes];
+  state.discount = h.discount || 0;
+  state.rush = h.rush || 0;
+  state.taxRate = h.taxRate || 0;
+  state.editingHistoryId = null;
+  document.getElementById('editingBanner').style.display = 'none';
+  switchPage('new-quote');
+  renderCountryGrid(); renderClassGrid(); updatePanel();
+  showToast('已基于历史报价创建新草稿，请填写客户名称');
+}
+
+function deleteHistory(idx) {
+  const h = state.history[idx];
+  showConfirm('删除这条报价记录？', `报价 <strong>${h.id}</strong>（客户：${h.customer}）删除后无法恢复。`,
+    `deleteHistoryConfirmed(${idx})`, '删除', true);
+}
+function deleteHistoryConfirmed(idx) {
+  const wasEditing = state.editingHistoryId === state.history[idx].id;
+  state.history.splice(idx, 1);
+  saveData();
+  renderHistory();
+  updateHistoryBadge();
+  if (wasEditing) resetDraft();
+  showToast('已删除', 'success');
+}
+
+// ============================================================
+// PDF EXPORT (real file download via html2canvas + jsPDF)
+// ============================================================
+function buildPdfDocHtml(data) {
+  let rows = '';
+  data.countryRows.forEach(r => {
+    rows += `<tr>
+      <td>${r.name} (${r.code})</td><td>${r.currency}</td>
+      <td class="num">${fmtCurrency(r.official, r.currency)}</td>
+      <td class="num">${fmtCurrency(r.service, r.currency)}</td>
+      <td class="num">${r.search > 0 ? fmtCurrency(r.search, r.currency) : '—'}</td>
+      <td class="num">${fmtCurrency(r.total, r.currency)}</td>
+      <td class="num">¥${fmt(r.cny)}</td>
+    </tr>`;
+  });
+  return `<div class="pdf-doc">
+    <div class="pdf-doc-header">
+      <h1>商标申请费用预估</h1>
+      <p>TRADEMARK APPLICATION COST ESTIMATE</p>
+    </div>
+    <div class="pdf-doc-info">
+      <div><span class="label">客户</span>${data.customer}<br><span class="label">申请类别</span>${data.classesStr}（共 ${data.classCount} 类）</div>
+      <div style="text-align:right"><span class="label">报价单号</span>${data.id}<br><span class="label">日期</span>${data.dateStr}　有效期至 ${data.validStr}</div>
+    </div>
+    <table class="pdf-doc-table">
+      <thead><tr><th>国家/地区</th><th>币种</th><th>官费</th><th>服务费</th><th>检索费</th><th>本币合计</th><th>折合CNY</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="pdf-doc-summary">
+      <div>费用小计：¥${fmt(data.subtotal)} CNY</div>
+      ${data.discount > 0 ? `<div>客户折扣：-¥${fmt(data.discount)}</div>` : ''}
+      ${data.rush > 0 ? `<div>加急服务：+¥${fmt(data.rush)}</div>` : ''}
+      ${data.tax > 0 ? `<div>税费（${data.taxRate}%）：+¥${fmt(data.tax)}</div>` : ''}
+      <div class="total">预估总计：¥${fmt(data.grandTotal)} CNY</div>
+    </div>
+    <div class="pdf-doc-footer">
+      <p>本报价为预估费用，实际费用以各国知识产权局公示为准。官费可能因政策及汇率变化而调整。</p>
+      <p>此报价有效期至 ${data.validStr}。</p>
+    </div>
+  </div>`;
+}
+
+function computeQuoteData(customer, id, countries, classes, discount, rush, taxRate, rates, exchange, createdDate, validDays) {
+  const classCount = classes.length;
+  const now = createdDate ? new Date(createdDate) : new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const validDate = new Date(now.getTime() + (validDays||30) * 86400000);
+  const validStr = `${validDate.getFullYear()}-${String(validDate.getMonth()+1).padStart(2,'0')}-${String(validDate.getDate()).padStart(2,'0')}`;
+  const classesStr = classes.map(n => `第${n}类`).join('、');
+
+  let subtotal = 0;
+  const countryRows = [];
+  countries.forEach(code => {
+    const rate = rates.find(r => r.code === code);
+    if (!rate) return;
+    const cost = calcCountryCost(rate, classCount);
+    const cny = toCNY(cost.total, rate.currency, exchange);
+    subtotal += cny;
+    countryRows.push({ name: rate.name, code, currency: rate.currency, ...cost, cny });
+  });
+
+  const tax = computeQuoteTotal(subtotal, discount, rush, taxRate) - (subtotal - (discount||0) + (rush||0));
+  const grandTotal = computeQuoteTotal(subtotal, discount, rush, taxRate);
+
+  return { customer, id, dateStr, validStr, classesStr, classCount, countryRows, subtotal, discount: discount||0, rush: rush||0, taxRate: taxRate||0, tax, grandTotal };
+}
+
+async function renderPdfAndDownload(data, btn) {
+  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+    showToast('PDF 组件加载失败，请检查网络后重试', 'error');
+    return;
+  }
+  const originalText = btn ? btn.textContent : null;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 生成中...'; }
+  try {
+    const area = document.getElementById('pdfRenderArea');
+    area.innerHTML = buildPdfDocHtml(data);
+    // allow layout to settle
+    await new Promise(r => setTimeout(r, 60));
+    const target = area.firstElementChild;
+    const canvas = await html2canvas(target, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = 210, pageHeight = 297;
+    const imgWidth = pageWidth;
+    const imgHeight = canvas.height * imgWidth / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+    const safeCustomer = (data.customer || '客户').replace(/[\\/:*?"<>|]/g, '');
+    pdf.save(`${data.id}_${safeCustomer}_商标报价单.pdf`);
+    area.innerHTML = '';
+    showToast('PDF 已导出', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('PDF 生成失败，请重试', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  }
+}
+
+function exportCurrentDraftPDF() {
+  const customer = document.getElementById('customerName').value.trim();
+  const quoteId = document.getElementById('quoteId').value;
+  if (state.selectedCountries.length === 0 || state.selectedClasses.length === 0) {
+    showToast('请至少选择一个国家和一个商标类别', 'error');
+    return;
+  }
+  const validDays = +document.getElementById('validDays').value || 30;
+  const data = computeQuoteData(
+    customer || '待填写', quoteId, state.selectedCountries, state.selectedClasses,
+    parseFloat(state.discount)||0, parseFloat(state.rush)||0, parseFloat(state.taxRate)||0,
+    state.rates, state.exchange, new Date(), validDays
+  );
+  renderPdfAndDownload(data, document.getElementById('exportPdfBtn'));
+}
+
+function exportHistoryPDF(idx, btn) {
+  const h = state.history[idx];
+  if (!h) return;
+  const rates = h.ratesSnapshot && h.ratesSnapshot.length ? h.ratesSnapshot : state.rates;
+  const exchange = h.exchangeSnapshot || state.exchange;
+  const data = computeQuoteData(
+    h.customer, h.id, h.countries, h.classes, h.discount, h.rush, h.taxRate,
+    rates, exchange, h.date, h.validDays || 30
+  );
+  renderPdfAndDownload(data, btn);
+}
+
+// ============================================================
+// HISTORY
+// ============================================================
+function computeHistoryEntryTotal(h) {
+  return computeQuoteTotal(h.subtotal, h.discount, h.rush, h.taxRate);
+}
+
+function renderHistoryStats() {
+  const wrap = document.getElementById('historyStats');
+  const total = state.history.length;
+  const now = new Date();
+  const thisMonth = state.history.filter(h => {
+    const d = new Date(h.date);
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }).length;
+  const totalValue = state.history.reduce((sum, h) => sum + computeHistoryEntryTotal(h), 0);
+  wrap.innerHTML = `
+    <div class="history-stat-card"><div class="hs-label">累计报价数</div><div class="hs-value">${total}</div></div>
+    <div class="history-stat-card"><div class="hs-label">本月新增</div><div class="hs-value">${thisMonth}</div></div>
+    <div class="history-stat-card"><div class="hs-label">累计预估金额</div><div class="hs-value accent">¥${fmt(totalValue,0)}</div></div>
+  `;
+}
+
+function getHistoryCountryNames(h) {
+  const rates = h.ratesSnapshot && h.ratesSnapshot.length ? h.ratesSnapshot : state.rates;
+  return h.countries.map(c => {
+    const r = rates.find(x => x.code === c) || state.rates.find(x => x.code === c);
+    return r ? r.name : c;
+  });
+}
+
+function renderHistory() {
+  renderHistoryStats();
+  const list = document.getElementById('historyList');
+  const search = (document.getElementById('historySearch').value || '').toLowerCase().trim();
+
+  let items = state.history.map((h, i) => ({ h, i }));
+  if (search) {
+    items = items.filter(({h}) => {
+      const countryNames = getHistoryCountryNames(h).join(' ').toLowerCase();
+      return h.customer.toLowerCase().includes(search) ||
+        h.id.toLowerCase().includes(search) ||
+        countryNames.includes(search);
+    });
+  }
+
+  if (state.history.length === 0) {
+    list.innerHTML = `<div class="history-empty"><div class="he-icon">📋</div><p>暂无报价记录，保存报价后会出现在这里</p></div>`;
+    return;
+  }
+  if (items.length === 0) {
+    list.innerHTML = `<div class="no-results">没有匹配「${search}」的报价记录</div>`;
+    return;
+  }
+
+  list.innerHTML = '<div class="history-list">' + items.map(({h, i}) => {
+    const d = new Date(h.date);
+    const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const countries = getHistoryCountryNames(h).join('、');
+    const total = computeHistoryEntryTotal(h);
+    const editedBadge = h.updatedAt ? `<span class="hc-edited-badge">已编辑</span>` : '';
+    return `<div class="history-card">
+      <div class="hc-main" onclick="showHistoryDetail(${i})">
+        <div class="hc-id-wrap"><span class="hc-id">${h.id}</span>${editedBadge}</div>
+        <div class="hc-customer">${h.customer}</div>
+        <div class="hc-countries">${countries} · ${h.classes.length} 类</div>
+        <div class="hc-total">¥${fmt(total)}</div>
+        <div class="hc-date">${ds}</div>
+      </div>
+      <div class="hc-actions">
+        <button onclick="editHistoryEntry(${i})">编辑</button>
+        <button class="btn-del" onclick="deleteHistory(${i})">删除</button>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function showHistoryDetail(idx) {
+  const h = state.history[idx];
+  if (!h) return;
+  const rates = h.ratesSnapshot && h.ratesSnapshot.length ? h.ratesSnapshot : state.rates;
+  const exchange = h.exchangeSnapshot || state.exchange;
+  const classCount = h.classes.length;
+  const d = new Date(h.date);
+  const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+
+  let countriesHtml = '';
+  let subtotal = 0;
+  h.countries.forEach(code => {
+    const rate = rates.find(r => r.code === code);
+    if (!rate) return;
+    const cost = calcCountryCost(rate, classCount);
+    const cny = toCNY(cost.total, rate.currency, exchange);
+    subtotal += cny;
+    countriesHtml += `<div class="qp-country">
+      <div class="qp-country-header">
+        <div class="qp-cc">${code}</div>
+        <div class="qp-cn">${rate.name}</div>
+        <div class="qp-classes">${classCount} 类 · ${rate.currency} 计价</div>
+        <div class="qp-cny">¥${fmt(cny)}</div>
+      </div>
+      <div class="qp-fees">
+        <span>官费 ${fmtCurrency(cost.official, rate.currency)}</span>
+        <span>服务费 ${fmtCurrency(cost.service, rate.currency)}</span>
+        ${cost.search > 0 ? `<span>检索 ${fmtCurrency(cost.search, rate.currency)}</span>` : ''}
+      </div>
+    </div>`;
+  });
+
+  const grandTotal = computeHistoryEntryTotal(h);
+  const tax = grandTotal - (subtotal - (h.discount||0) + (h.rush||0));
+
+  openModal(`
+    <div class="detail-header">
+      <div>
+        <div class="dh-customer">${h.customer}</div>
+        <div class="dh-id">${h.id}　·　第${h.classes.join('、第')}类（共 ${classCount} 类）</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div class="dh-date">创建于 ${ds}${h.updatedAt ? '<br>已编辑' : ''}</div>
+        <button class="detail-close" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    ${countriesHtml}
+    <div class="qp-summary" style="margin-top:4px">
+      <div class="qp-summary-row"><span>费用小计</span><span>¥${fmt(subtotal)} CNY</span></div>
+      ${h.discount > 0 ? `<div class="qp-summary-row discount"><span>客户折扣</span><span>-¥${fmt(h.discount)} CNY</span></div>` : ''}
+      ${h.rush > 0 ? `<div class="qp-summary-row"><span>加急服务</span><span>+¥${fmt(h.rush)} CNY</span></div>` : ''}
+      ${tax > 0 ? `<div class="qp-summary-row"><span>税费（${h.taxRate}%）</span><span>+¥${fmt(tax)} CNY</span></div>` : ''}
+      <div class="qp-summary-row total"><span>预估总计</span><span>¥${fmt(grandTotal)} CNY</span></div>
+    </div>
+    <div class="modal-actions" style="justify-content:flex-start;flex-wrap:wrap">
+      <button class="btn-secondary" id="detailExportBtn" onclick="exportHistoryPDF(${idx}, document.getElementById('detailExportBtn'))">📄 导出 PDF</button>
+      <button class="btn-secondary" onclick="editHistoryEntry(${idx})">✎ 编辑此报价</button>
+      <button class="btn-secondary" onclick="duplicateHistoryEntry(${idx})">⧉ 复制为新报价</button>
+      <button class="btn-danger" onclick="closeModal();deleteHistory(${idx})" style="margin-left:auto">删除</button>
+    </div>
+  `, true);
+}
+
+function updateHistoryBadge() {
+  document.getElementById('historyCount').textContent = state.history.length;
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function renderSettings() {
+  const table = document.getElementById('settingsTable');
+  table.innerHTML = `<table>
+    <thead><tr>
+      <th style="width:100px">国家/地区</th><th style="width:52px">代码</th><th style="width:72px">币种</th>
+      <th>首类官费</th><th>附加类官费</th><th>首类服务费</th><th>附加类服务费</th><th>检索费/类</th><th style="width:40px"></th>
+    </tr></thead>
+    <tbody>${state.rates.map((r, i) => `<tr>
+      <td><input class="cell-input" value="${r.name}" onchange="state.rates[${i}].name=this.value"></td>
+      <td><input class="cell-input narrow" value="${r.code}" onchange="state.rates[${i}].code=this.value"></td>
+      <td><input class="cell-input narrow" value="${r.currency}" onchange="state.rates[${i}].currency=this.value"></td>
+      <td><input class="cell-input" type="number" value="${r.firstOfficial}" onchange="state.rates[${i}].firstOfficial=+this.value"></td>
+      <td><input class="cell-input" type="number" value="${r.addOfficial}" onchange="state.rates[${i}].addOfficial=+this.value"></td>
+      <td><input class="cell-input" type="number" value="${r.firstService}" onchange="state.rates[${i}].firstService=+this.value"></td>
+      <td><input class="cell-input" type="number" value="${r.addService}" onchange="state.rates[${i}].addService=+this.value"></td>
+      <td><input class="cell-input" type="number" value="${r.searchFee}" onchange="state.rates[${i}].searchFee=+this.value"></td>
+      <td><button class="btn-delete" onclick="removeRate(${i})">×</button></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+
+  const exGrid = document.getElementById('exchangeGrid');
+  const currencies = [...new Set(state.rates.map(r => r.currency))];
+  exGrid.innerHTML = currencies.map(cur => `<div class="exchange-card">
+    <div class="ex-label">${cur} → CNY</div>
+    <input class="ex-input" type="number" step="0.0001" value="${state.exchange[cur]||1}"
+      onchange="state.exchange['${cur}']=+this.value">
+  </div>`).join('');
+}
+
+function addCountryRate() {
+  state.rates.push({name:'新国家',code:'XX',currency:'USD',firstOfficial:0,addOfficial:0,firstService:0,addService:0,searchFee:0});
+  renderSettings();
+  renderCountryGrid();
+}
+
+function removeRate(idx) {
+  const code = state.rates[idx].code;
+  state.rates.splice(idx, 1);
+  state.selectedCountries = state.selectedCountries.filter(c => c !== code);
+  renderSettings();
+  renderCountryGrid();
+  updatePanel();
+}
+
+function saveSettings() {
+  const exInputs = document.querySelectorAll('#exchangeGrid .ex-input');
+  const currencies = [...new Set(state.rates.map(r => r.currency))];
+  currencies.forEach((cur, i) => {
+    if (exInputs[i]) state.exchange[cur] = +exInputs[i].value;
+  });
+  const rows = document.querySelectorAll('#settingsTable tbody tr');
+  rows.forEach((row, i) => {
+    const inputs = row.querySelectorAll('.cell-input');
+    if (state.rates[i]) {
+      state.rates[i].name = inputs[0].value;
+      state.rates[i].code = inputs[1].value;
+      state.rates[i].currency = inputs[2].value;
+      state.rates[i].firstOfficial = +inputs[3].value;
+      state.rates[i].addOfficial = +inputs[4].value;
+      state.rates[i].firstService = +inputs[5].value;
+      state.rates[i].addService = +inputs[6].value;
+      state.rates[i].searchFee = +inputs[7].value;
+    }
+  });
+  saveData();
+  renderCountryGrid();
+  updatePanel();
+  showToast('设置已保存', 'success');
+}
+
+async function fetchExchangeRates() {
+  try {
+    const resp = await fetch('https://api.exchangerate-api.com/v4/latest/CNY');
+    if (!resp.ok) throw new Error('API error');
+    const data = await resp.json();
+    Object.keys(state.exchange).forEach(cur => {
+      if (data.rates[cur]) state.exchange[cur] = +(1 / data.rates[cur]).toFixed(6);
+    });
+    saveData();
+    renderSettings();
+    updatePanel();
+    showToast('汇率已从线上更新', 'success');
+  } catch(e) {
+    try {
+      const resp = await fetch('https://open.er-api.com/v6/latest/CNY');
+      if (!resp.ok) throw new Error('API error');
+      const data = await resp.json();
+      Object.keys(state.exchange).forEach(cur => {
+        if (data.rates[cur]) state.exchange[cur] = +(1 / data.rates[cur]).toFixed(6);
+      });
+      saveData();
+      renderSettings();
+      updatePanel();
+      showToast('汇率已从线上更新', 'success');
+    } catch(e2) {
+      showToast('线上汇率获取失败，请手动更新或检查网络', 'error');
+    }
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>
